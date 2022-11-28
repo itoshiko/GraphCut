@@ -1,4 +1,5 @@
-#include "EigenSolver.h"
+#include "eigen/EigenSolver.h"
+#include "kmeans/kmeans.hpp"
 #include <iostream>
 #include <random>
 

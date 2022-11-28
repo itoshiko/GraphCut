@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="test_lib.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="eigen\EigenSolver.cpp">
+      <Filter>eigen</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="eigen">
+      <UniqueIdentifier>{88529665-de67-455f-bacb-c93c718392f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kmeans">
+      <UniqueIdentifier>{4286fd71-3cca-41c0-9046-c37e521d3a5e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="eigen\EigenSolver.h">
+      <Filter>eigen</Filter>
+    </ClInclude>
+    <ClInclude Include="eigen\lanczos_util.h">
+      <Filter>eigen</Filter>
+    </ClInclude>
+    <ClInclude Include="kmeans\kmeans.hpp">
+      <Filter>kmeans</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="eigen\lanczos_util.cu">
+      <Filter>eigen</Filter>
+    </CudaCompile>
+    <CudaCompile Include="kmeans\kmeans_util.cu">
+      <Filter>kmeans</Filter>
+    </CudaCompile>
+    <CudaCompile Include="kmeans\kmeans_util.h">
+      <Filter>kmeans</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>

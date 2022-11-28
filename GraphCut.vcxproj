@@ -11,16 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EigenSolver.h" />
-    <ClInclude Include="lanczos_util.h" />
+    <ClCompile Include="eigen\EigenSolver.cpp" />
+    <ClCompile Include="test_lib.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EigenSolver.cpp" />
-    <ClCompile Include="test_lib.cpp" />
-    <CudaCompile Include="lanczos_util.cu">
-      <FileType>Document</FileType>
-    </CudaCompile>
-    <ClCompile Include="main.cpp" />
+    <ClInclude Include="eigen\EigenSolver.h" />
+    <ClInclude Include="eigen\lanczos_util.h" />
+    <ClInclude Include="kmeans\kmeans.hpp" />
+    <CudaCompile Include="kmeans\kmeans_util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="eigen\lanczos_util.cu" />
+    <CudaCompile Include="kmeans\kmeans_util.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{146D157A-B1E5-472D-8418-1736EDDE9DB6}</ProjectGuid>
@@ -72,6 +75,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_86,sm_86</CodeGeneration>
+      <PtxAsOptionV>true</PtxAsOptionV>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
