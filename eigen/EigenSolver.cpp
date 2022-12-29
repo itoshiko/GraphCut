@@ -9,14 +9,14 @@ EigenSolver::EigenSolver()
     CUBLAS_CALL(cublasSetPointerMode(ctx, CUBLAS_POINTER_MODE_HOST));
 }
 
-size_t EigenSolver::solve(float* arr, float* eigvalues, float* eigvecs, size_t mat_size, size_t num_ei, bool maximum) const
+size_t EigenSolver::solve(float* arr, float* eig_values, float* eig_vecs, size_t mat_size, size_t num_ei, bool maximum) const
 {
     size_t max_iter;
     if (mat_size < 1000)  max_iter = mat_size;
     else max_iter = mat_size;
     size_t vec_size = mat_size * sizeof(float);
 
-    float* u; float* e_vec_tri_dev; float* e_vec_dev;
+    float* u; float* e_vec_tri_dev;
     float* alpha_host; float* beta_host; float* evs; float* pevs; float* e_vec_tri;
     CUDA_CALL(cudaMalloc(&u, (max_iter + 1) * vec_size));  // Lanczos vectors
     evs = new float[num_ei] {0.0};  // Calculated eigenvalue
@@ -30,6 +30,11 @@ size_t EigenSolver::solve(float* arr, float* eigvalues, float* eigvecs, size_t m
 
     size_t itern = max_iter;
     float const_one = 1.0;
+
+    //std::ofstream ofs;
+    //ofs.open("D:/course_proj/GraphCut/test_img/iter_eval.txt", std::ios::out);
+    //ofs << std::fixed << std::setprecision(8) << std::endl;
+
     for (size_t k = 1; k <= max_iter; ++k) {
         float* u_km1 = u + (k - 1) * mat_size;
         float* u_k = u + k * mat_size;
@@ -58,11 +63,12 @@ size_t EigenSolver::solve(float* arr, float* eigvalues, float* eigvecs, size_t m
         // find eigenvalue of tridiagonal matrix
         for (size_t iroot = 0; iroot < num_ei; ++iroot) {
             evs[iroot] = TridiagonalEigen<float>::find_mth_eigenvalue(
-                alpha_host, beta_host, maximum ? max_iter - 1 - iroot : iroot, k, EPS);
-            //std::cout << "ev " << iroot << " " << evs[iroot] << std::endl;
+                alpha_host, beta_host, maximum ? max_iter - 1 - iroot : iroot, k, TOL);
+            //ofs << evs[iroot] << " ";
         }
+        //ofs << std::endl;
 
-        if (beta_host[k - 1] < minimum_effective_decimal<float>() * 1e-1) {
+        if (beta_host[k - 1] < minimum_effective_decimal<float>() * 1e-2) {
             itern = k;
             break;
         }
@@ -75,7 +81,7 @@ size_t EigenSolver::solve(float* arr, float* eigvalues, float* eigvecs, size_t m
         for (size_t iroot = 0; iroot < num_ei; ++iroot) {
             const auto& ev = evs[iroot];
             const auto& pev = pevs[iroot];
-            if (std::abs(ev - pev) >= std::min(std::abs(ev), std::abs(pev)) * 1e-4) {
+            if (std::abs(ev - pev) >= std::min(std::abs(ev), std::abs(pev)) * 1e-6) {
                 break_cond = false;
                 break;
             }
@@ -89,23 +95,30 @@ size_t EigenSolver::solve(float* arr, float* eigvalues, float* eigvecs, size_t m
             memcpy_s(pevs, sizeof(float) * num_ei, evs, sizeof(float) * num_ei);
         }
     }
-
-    memcpy_s(eigvalues, sizeof(float) * num_ei, evs, sizeof(float) * num_ei);
+    //ofs.close();
     beta_host[itern] = 0.0;
     e_vec_tri = new float[num_ei * itern];
     CUDA_CALL(cudaMalloc(&e_vec_tri_dev, num_ei * itern * sizeof(float)));
-    CUDA_CALL(cudaMalloc(&e_vec_dev, num_ei * mat_size * sizeof(float)));
-    CUDA_CALL(cudaMemset(e_vec_dev, 0, num_ei * mat_size * sizeof(float)));
 
     for (size_t iroot = 0; iroot < num_ei; ++iroot) {
-        TridiagonalEigen<float>::tridiagonal_eigenvector(alpha_host, beta_host, eigvalues[iroot], e_vec_tri + (iroot * itern), itern);
+        TridiagonalEigen<float>::tridiagonal_eigenvector(alpha_host, beta_host, evs[iroot], e_vec_tri + (iroot * itern), itern);
     }
     CUDA_CALL(cudaMemcpy(e_vec_tri_dev, e_vec_tri, num_ei * itern * sizeof(float), cudaMemcpyHostToDevice));
     CUBLAS_CALL(cublasSgemm(
-        ctx, CUBLAS_OP_N, CUBLAS_OP_N, mat_size, num_ei, itern, &const_one, u, mat_size, e_vec_tri_dev, itern, &const_one, e_vec_dev, mat_size));
-    for (size_t iroot = 0; iroot < num_ei; ++iroot) {
-        normalize(e_vec_dev + iroot * mat_size, mat_size, ctx);
-    }
-    CUDA_CALL(cudaMemcpy(eigvecs, e_vec_dev, num_ei * mat_size * sizeof(float), cudaMemcpyDeviceToHost));
+        ctx, CUBLAS_OP_N, CUBLAS_OP_N, mat_size, num_ei, itern, &const_one, u, mat_size, e_vec_tri_dev, itern, &const_one, eig_vecs, mat_size));
+    //for (size_t iroot = 0; iroot < num_ei; ++iroot) {
+    //    normalize(eig_vecs + iroot * mat_size, mat_size, ctx);
+    //}
+    CUDA_CALL(cudaMemcpy(eig_values, evs, num_ei * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaDeviceSynchronize());
+
+    delete[] evs;
+    delete[] pevs;
+    delete[] alpha_host;
+    delete[] beta_host;
+    delete[] e_vec_tri;
+    CUDA_CALL(cudaFree(u));
+    CUDA_CALL(cudaFree(e_vec_tri_dev));
+
     return itern;
 }

@@ -30,3 +30,16 @@ void solveKMeans(
 	size_t sample,
 	size_t max_iter);
 
+void transpose(
+	float* in,
+	float* out,
+	size_t num_sample,
+	size_t dim
+);
+
+void cutByTh(
+	float* arr, 
+	int* label, 
+	size_t n, 
+	float th);
+

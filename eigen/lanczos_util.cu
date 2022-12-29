@@ -37,7 +37,7 @@ void normalize(float* vec, size_t n, cublasHandle_t handle)
 {
     float _norm;
     CUBLAS_CALL(cublasSnrm2(handle, n, vec, 1, &_norm));
-    if (_norm < EPS)
+    if (_norm < TOL)
         return;
     _norm = 1. / _norm;
     CUBLAS_CALL(cublasSscal(handle, n, &_norm, vec, 1));

@@ -82,6 +82,28 @@ void _assign_label(float* arr, float* rep, int* label, size_t k_rep, size_t dim,
 	label[pt] = _label;
 }
 
+__global__
+void _transpose(float* in, float* out, size_t num_sample, size_t dim)
+{
+	int sp = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
+	if (sp >= num_sample) return;
+	float sum = 0.;
+	for (int i = 0; i < dim; ++i)
+		sum += (in[num_sample * i + sp] * in[num_sample * i + sp]);
+	sum = sqrtf(sum);
+	for (int i = 0; i < dim; ++i)
+		out[sp * dim + i] = in[num_sample * i + sp] / sum;
+}
+
+__global__
+void _classify_th(float* arr, int* label, size_t n, float th)
+{
+	int sp = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y * blockDim.x + threadIdx.x;
+	if (sp >= n) return;
+	if (arr[sp] < th) label[sp] = 0;
+	else label[sp] = 1;
+}
+
 void initRep(float* arr, float* reps, size_t k_rep, size_t dim, size_t sample)
 {
 	std::mt19937 rnd(time(nullptr));
@@ -136,6 +158,12 @@ void solveKMeans(float* arr, float* reps, int* label, size_t k_rep, size_t dim, 
 		_assign_label << <gridSize, blockSize >> > (arr, reps, label, k_rep, dim, sample);
 		CUDA_CALL(cudaMemcpy(centerHost, reps, dim * k_rep * sizeof(float), cudaMemcpyDeviceToHost));
 		bool converge = true;
+		for (int i = 0; i < k_rep; i++)
+		{
+			for (int j = 0; j < dim; j++)
+				printf("%f ", centerHost[i * dim + j]);
+			printf("\n");
+		}
 		for (int r = 0; r < k_rep; r++)
 		{
 			float _offset = 0.;
@@ -219,4 +247,20 @@ void ArrayArgmax(const float* input, float* max_val, int* max_idx, size_t n) {
 
 	CUDA_CALL(cudaMemcpy(max_idx, &(d_out->key), sizeof(int), cudaMemcpyDeviceToHost));
 	CUDA_CALL(cudaMemcpy(max_val, &(d_out->value), sizeof(float), cudaMemcpyDeviceToHost));
+}
+
+void transpose(float* in, float* out, size_t num_sample, size_t dim)
+{
+	dim3 blockSize(32, 32, 1);
+	dim3 gridSize((num_sample - 1) / (32 * 32) + 1, 1, 1);
+	_transpose << <gridSize, blockSize >> > (in, out, num_sample, dim);
+	CUDA_CALL(cudaDeviceSynchronize());
+}
+
+void cutByTh(float* arr, int* label, size_t n, float th)
+{
+	dim3 blockSize(32, 32, 1);
+	dim3 gridSize((n - 1) / (32 * 32) + 1, 1, 1);
+	_classify_th << <gridSize, blockSize >> > (arr, label, n, th);
+	CUDA_CALL(cudaDeviceSynchronize());
 }

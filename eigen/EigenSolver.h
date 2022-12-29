@@ -10,6 +10,8 @@
 #include <random>
 #include <algorithm>
 #include <utility>
+#include <fstream>
+#include <iomanip>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -112,9 +114,21 @@ public:
     static inline void tridiagonal_eigenvector(const T* main_diag, const T* sub_diag, const T ev, T* e_vec, size_t n) {
         e_vec[n - 1] = 1.0;
         e_vec[n - 2] = ((ev - main_diag[n - 1]) * e_vec[n - 1]) / sub_diag[n - 2];
+        if (fabsf(e_vec[n - 2]) > 1.0)
+        {
+            float sca = 1. / fabsf(e_vec[n - 2]);
+            e_vec[n - 1] *= sca;
+            e_vec[n - 2] *= sca;
+        }
         for (size_t k = n - 2; k-- > 0;) {
             e_vec[k] = ((ev - main_diag[k + 1]) * e_vec[k + 1] - sub_diag[k + 1] * e_vec[k + 2]) / sub_diag[k];
+            float sca = 1. / fabsf(e_vec[k]);
+            if (sca < 1.0) {
+                for (int kk = k; kk < n; ++kk) e_vec[kk] *= sca;
+            }
         }
+        //for (int i = 0; i < n; ++i) printf("%f ", e_vec[i]);
+        //printf("\n");
     }
 };
 
@@ -136,7 +150,6 @@ struct RandomVectorGenerator
         scale_vec(arr, max - min, min, n);
     }
 };
-
 
 
 class EigenSolver

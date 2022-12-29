@@ -1,11 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="test_lib.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="eigen\EigenSolver.cpp">
       <Filter>eigen</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="eigen">
@@ -25,6 +24,8 @@
     <ClInclude Include="kmeans\kmeans.hpp">
       <Filter>kmeans</Filter>
     </ClInclude>
+    <ClInclude Include="graphLap.h" />
+    <ClInclude Include="imageIO.h" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="eigen\lanczos_util.cu">
@@ -36,5 +37,7 @@
     <CudaCompile Include="kmeans\kmeans_util.h">
       <Filter>kmeans</Filter>
     </CudaCompile>
+    <CudaCompile Include="graphLap.cu" />
+    <CudaCompile Include="imageIO.cpp" />
   </ItemGroup>
 </Project>

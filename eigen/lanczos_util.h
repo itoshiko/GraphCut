@@ -5,7 +5,7 @@
 #include <cublas_v2.h>
 #include <cstdio>
 
-#define EPS 1e-6
+#define TOL 1e-6
 
 #define CUDA_CALL(x) if((x) != cudaSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__); \
