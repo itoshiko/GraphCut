@@ -52,12 +52,19 @@ void _calc_centroid(float* arr, int* label, float* tmpSum, int* tmpCnt, float* n
 		{
 			atomicAdd(tmpSum + rid * dim + d, aggregate);
 			atomicAdd(tmpCnt + rid, total_cnt);
-			__syncthreads();
-			if (blockIdx.x == 0)
-			{
-				new_center[rid * dim + d] = (tmpSum[rid * dim + d] / (float)tmpCnt[rid]) * dim;
-			}
 		}
+	}
+}
+
+__global__
+void _calc_centroid1(float* tmpSum, int* tmpCnt, float* new_center)
+{
+	int d = threadIdx.x;
+	int rid = threadIdx.y;
+	int dim = blockDim.x;
+	if (blockIdx.x == 0)
+	{
+		new_center[rid * dim + d] = (tmpSum[rid * dim + d] / (float)tmpCnt[rid]) * dim;
 	}
 }
 
@@ -131,6 +138,44 @@ void initRep(float* arr, float* reps, size_t k_rep, size_t dim, size_t sample)
 	CUDA_CALL(cudaDeviceSynchronize());
 }
 
+void initRepRandom(float* arr, float* reps, size_t k_rep, size_t dim, size_t sample)
+{
+	std::mt19937 rnd(time(nullptr));
+	int32_t *select = new int32_t[k_rep];
+	for (int i = 0; i < k_rep; ++i)
+	{
+		if (i == 0) select[0] = rnd() % sample;
+		else
+		{
+			int32_t _tmp;
+			while (true)
+			{
+				_tmp = rnd() % sample;
+				bool accept = true;
+				for (int ii = 0; ii < i; ++ii)
+				{
+					if (select[ii] == _tmp)
+					{
+						accept = false;
+						break;
+					}
+				}
+				if (accept)
+				{
+					select[i] = _tmp;
+					break;
+				}
+			}
+		}
+	}
+	for (int i = 0; i < k_rep; ++i)
+	{
+		printf("%d ", select[i]);
+		CUDA_CALL(cudaMemcpy(reps + dim * i, arr + select[i] * dim, dim * sizeof(float), cudaMemcpyDeviceToDevice));
+	}
+	printf("\n");
+}
+
 void solveKMeans(float* arr, float* reps, int* label, size_t k_rep, size_t dim, size_t sample, size_t max_iter)
 {
 	dim3 blockSize(32, 16, 1);
@@ -153,7 +198,8 @@ void solveKMeans(float* arr, float* reps, int* label, size_t k_rep, size_t dim, 
 		CUDA_CALL(cudaMemset(tmpSum, 0, dim * k_rep * sizeof(float)));
 		CUDA_CALL(cudaMemset(tmpCnt, 0, k_rep * sizeof(int)));
 		_calc_centroid<16, 16> << <gridAvg, blockAvg >> > (arr, label, tmpSum, tmpCnt, reps, dim, sample);
-		CUDA_CALL(cudaGetLastError());
+		CUDA_CALL(cudaDeviceSynchronize());
+		_calc_centroid1 << <dim3(dim, k_rep, 1), 1 >> > (tmpSum, tmpCnt, reps);
 		CUDA_CALL(cudaDeviceSynchronize());
 		_assign_label << <gridSize, blockSize >> > (arr, reps, label, k_rep, dim, sample);
 		CUDA_CALL(cudaMemcpy(centerHost, reps, dim * k_rep * sizeof(float), cudaMemcpyDeviceToHost));

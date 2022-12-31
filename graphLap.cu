@@ -90,7 +90,7 @@ void _calc_aff_mat_rbf(
 		float* p2_data = arr + p2 * dim;
 		float sim_int = _calc_pix_diff(p1_data, p2_data, sigma_int, dim);
 		float sim_dist = _calc_dist_diff(p1, p2, width, height, sigma_dist);
-		sim = (weight_int * sim_int + weight_dist * sim_dist) / (weight_dist + weight_dist);
+		sim = (weight_int * sim_int + weight_dist * sim_dist) / (weight_int + weight_dist);
 	}
 	if (sim < th) sim = 0.;
 	aff[(p2 * (p2 + 1)) / 2 + p1] = sim;

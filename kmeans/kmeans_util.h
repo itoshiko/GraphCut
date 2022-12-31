@@ -21,6 +21,13 @@ void initRep(
 	size_t dim, 
 	size_t sample);
 
+void initRepRandom(
+	float* arr,
+	float* reps,
+	size_t k_rep,
+	size_t dim,
+	size_t sample);
+
 void solveKMeans(
 	float* arr,
 	float* reps,

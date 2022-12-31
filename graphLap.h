@@ -26,6 +26,18 @@ struct GraphGLOption
     float weight_int, weight_dist;
     float weight_th;
     float sigma_int, sigma_dist;
+
+    GraphGLOption()
+    {
+        type = GLType::N_CUT;
+        weight = GLWeight::WEIGHT_MIX;
+        mix = GLWeightMix::MIX_WEIGHTED_SUM;
+        weight_th = 0.6;
+        sigma_int = 0.5;
+        sigma_dist = 0.5;
+        weight_int = 0.8;
+        weight_dist = 0.2;
+    }
 };
 
 class GraphLaplacian

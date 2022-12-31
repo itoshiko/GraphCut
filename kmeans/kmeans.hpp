@@ -14,7 +14,8 @@ public:
 		float* arr_trans;
 		CUDA_CALL(cudaMalloc(&arr_trans, sample * dim * sizeof(float)));
 		transpose(arr, arr_trans, sample, dim);
-		initRep(arr_trans, reps, k_rep, dim, sample);
+		// initRep(arr_trans, reps, k_rep, dim, sample);
+		initRepRandom(arr_trans, reps, k_rep, dim, sample);
 		solveKMeans(arr_trans, reps, label, k_rep, dim, sample, ITER_MAX);
 		printf("KMeans solved\n");
 		return label;
